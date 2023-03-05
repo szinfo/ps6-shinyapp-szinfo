@@ -1,20 +1,13 @@
 library(shiny)
-library(rsconnect)
-ui <- fluidPage(
-  titlePanel("About"), 
-  mainPanel(
-    textOutput("welcome")
-  ),
-  fluidPage(
-    titlePanel("Plots")
-  ),
-  fluidPage(
-    titlePanek("Tables")
-  )
-) 
+library(tidyverse)
+library(ggplot2)
 
-server <- function(input, output) {
-  output$hello <- renderText("welcome to my app")
-}
+overdose_data <- read.csv("overdose-by-demographic.csv")
+
+ui <- fluidpage(
+  
+)
+
 
 shinyApp(ui = ui, server = server)
+
