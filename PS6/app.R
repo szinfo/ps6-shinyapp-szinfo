@@ -1,29 +1,24 @@
-
 library(shiny)
 library(tidyverse)
 library(ggplot2)
 
-# Read the data
-overdose_data <- read_csv("Overdose-demographic-data..csv")
 
-# Define the UI
+weather_data <- read_delim("UAH-lower-troposphere-long.csv")
+
+if(interactive()) {
 ui <- navbarPage(
-  "Drug Overdose Data Analysis",
+  "Temperature Data Analysis",
   tabPanel(
     "About",
     sidebarLayout(
       sidebarPanel(
-        p("With this app you can analyze the drug overdose
-                            rates per 100,000 people by demographics such as 
-                            sex  and ethincity, as well as a breakdown of 
-                            overdoses by drug. The dataset comes from the CDC, 
-                            containing the rates of overdoses by year from 1999 
-                            to 2021. Here is a quick look of overdose rates 
-                            overall then broken down by sex (Per 100,000 males
-                            and per 100,000 females)")
+        p("With this app you can analyze temperature data recorded 
+        from satellites. The dataset comes from the UAH, 
+        containing temperature data by year from 1978 to 2023. 
+        Here is a quick look of some of the data")
       ),
       mainPanel(
-        tableOutput("Overdose_Total")
+        tableOutput("temp_random")
       )
     )
   ),
@@ -31,50 +26,48 @@ ui <- navbarPage(
     "Plots",
     sidebarLayout(
       sidebarPanel(
-        p("With this graph you can analyze the overdose rates by drug,
-                 while examining the breakdown between overall rates then by 
-                 sex"),
-        selectInput(
-          "Drug",
-          "Select a drug:",
-          choices = c("Any Opioid", "Prescription Opioids2", "Synthetic Opioids other than Methadone (primarily fentanyl)3", "Heroin4", "Stimulants5a", "Cocaine5", "Psychostimulants With Abuse Potential (primarily methamphetamine)6")
-        ),
-        selectInput(
-          "demo",
-          "Select a demographic:",
-          choices = c("Overall","Female","Male", "White (Non-Hispanic)", "Black (Non-Hispanic)", "Asian* (Non-Hispanic)", "Native Hawaiian or Other Pacific Islander* (Non-Hispanic)", "Hispanic", "American Indian or Alaska Native (Non-Hispanic)")
-        )
+        p("With this graph you can analyze the temperature by different regions.
+          Select the region you wish to observe. The scatterplot shows the data
+          by month."),
+        uiOutput("Region"),
+        radioButtons("marker", "Choose marker option:",
+                     c("EXPR", "Option_2", "Option_3"))
       ),
       mainPanel(
-        plotOutput("Overdose_scatterplot")
-      )
+        plotOutput("temp_scatterplot"),
+        textOutput("observation")
     )
-  ),
+  )
+),
   tabPanel(
     "Tables"
   )
 )
 
-# Define the server
 server <- function(input, output) {
-  
-  # Subset the data based on the user input
-  filtered_data <- reactive({
-    overdose_data %>%
-      filter(Drug == input$drug) %>%
-      select(Year, input$demo) %>%
-      rename_with(~"Overdose_rate", input$demo) %>%
-      drop_na()
-  })
-  
-  # Create the scatterplot
-  output$Overdose_scatterplot <- renderPlot({
-    ggplot(filtered_data(), aes(x = Year, y = Overdose_rate)) +
-      geom_point() +
-      labs(title = paste("Overdose rates for", input$drug, "by", input$demo),
-           x = "Year", y = "Overdose rate per 100,000 people")
-  })
-}
+  output$temp_random <- renderTable({weather_data %>% sample_n(5)})
+  output$Region <- renderUI ({
+  checkboxGroupInput("region",
+                      "Select the region to display:",
+                      choices = (unique(weather_data$region )))
+})
+output$temp_scatterplot <- renderPlot({
+  subset <- weather_data %>% 
+    filter(region %in% input$region)
+  marker <- switch(input$marker,
+                   "EXPR" = 19,
+                   "Option_2" = 6,
+                   "Option_3" = 12)
+    ggplot(data = subset, aes(x = year, y = temp, color = subset$region)) + 
+      geom_point(shape = marker) 
+      })
+output$observation <- renderText({
+  text_data <- weather_data %>% 
+    filter(region == region %in% input$region) %>% 
+    count(region)
+  paste0("There are ", text_data$n, " observations.")
+})
+  }
 
-# Run the app
 shinyApp(ui = ui, server = server)
+}
