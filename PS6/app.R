@@ -28,10 +28,11 @@ ui <- navbarPage(
       sidebarPanel(
         p("With this graph you can analyze the temperature by different regions.
           Select the region you wish to observe. The scatterplot shows the data
-          by month."),
-        uiOutput("Region"),
+          by year, with multiple points at each year for the different months."
+          ),
         radioButtons("marker", "Choose marker option:",
-                     c("EXPR", "Option_2", "Option_3"))
+                     c("EXPR", "Option_2", "Option_3")),
+        uiOutput("Region")
       ),
       mainPanel(
         plotOutput("temp_scatterplot"),
@@ -40,7 +41,17 @@ ui <- navbarPage(
   )
 ),
   tabPanel(
-    "Tables"
+    "Tables",
+    sidebarLayout(
+      sidebarPanel(
+        p("The data table to the right shows the average temp across all regions
+          over different years"),
+        uiOutput("Time")),
+      mainPanel(
+        textOutput("Temp_range"),
+        plotOutput("temp_scatterplot")
+      )
+    )
   )
 )
 
@@ -63,10 +74,11 @@ output$temp_scatterplot <- renderPlot({
       })
 output$observation <- renderText({
   text_data <- weather_data %>% 
-    filter(region == region %in% input$region) %>% 
-    count(region)
-  paste0("There are ", text_data$n, " observations.")
+    filter(region %in% input$region)
+  paste("You are currently viewing this region: ", 
+         unique(text_data$region))
 })
+
   }
 
 shinyApp(ui = ui, server = server)
