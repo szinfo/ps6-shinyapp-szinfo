@@ -96,8 +96,22 @@ server <- function(input, output) {
   })
   output$Temp_range <- renderText({
     text_data <- weather_data_2 %>% 
-      group_by(year)
-    paste0("you are currently looking at the year ", unique(text_data$year))
+      group_by(year) %>%
+      mutate(ave_temp = mean(temp)) %>%
+      distinct(ave_temp) %>% 
+      filter(year %in% input$year) 
+    if(length(input$year) > 1) {
+      min_year <- min(input$year)
+      max_year <- max(input$year)
+      ave_temp_min_year <- text_data %>% filter(year == min_year) %>% pull(ave_temp)
+      ave_temp_max_year <- text_data %>% filter(year == max_year) %>% pull(ave_temp)
+      diff_temp <- ave_temp_max_year - ave_temp_min_year
+      paste0("The change in average temperature from ", 
+             min_year, " to ", max_year, 
+             " is ", round(diff_temp, 2), " degrees Celsius.")
+    } else {
+      "Please select at least two years to calculate the change in average temperature."
+    }
   })
 }
 
